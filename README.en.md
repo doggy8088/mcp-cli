@@ -692,4 +692,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 npm install -g @willh/mcp-cli
 ```
 
-The npm package is a thin wrapper that downloads the native `mcp-cli` binary from the matching GitHub Release tag. For example, `@willh/mcp-cli@0.1.0` downloads assets from `v0.1.0`.
+The npm package is a thin wrapper that downloads the native `mcp-cli` binary from the matching GitHub Release tag. For example, `@willh/mcp-cli@0.2.0` downloads assets from `v0.2.0`.

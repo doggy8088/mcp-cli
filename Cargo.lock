@@ -571,7 +571,7 @@ checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
 name = "mcp-cli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "futures-util",
