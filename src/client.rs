@@ -170,7 +170,10 @@ impl StdioClient {
                     lines.iter().cloned().collect::<Vec<_>>().join("\n")
                 }
             };
-            let err_msg = format!("Server process exited unexpectedly. Last stderr:\n{}", last_stderr);
+            let err_msg = format!(
+                "Server process exited unexpectedly. Last stderr:\n{}",
+                last_stderr
+            );
             let mut reqs = pending_requests_reader.lock().await;
             for (_, tx) in reqs.drain() {
                 let _ = tx.send(Err(err_msg.clone()));
