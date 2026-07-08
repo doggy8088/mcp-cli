@@ -77,8 +77,10 @@ impl StdioClient {
             .ok_or_else(|| server_connection_error(server_name, "Failed to open stderr"))?;
 
         let pending_requests: PendingRequests = Arc::new(Mutex::new(HashMap::new()));
+        let last_stderr_lines = Arc::new(Mutex::new(std::collections::VecDeque::new()));
 
         // Stderr forwarding task with prefix immediately
+        let last_stderr_lines_clone = Arc::clone(&last_stderr_lines);
         let server_name_str = server_name.to_string();
         tokio::spawn(async move {
             let mut reader = BufReader::new(&mut stderr);
@@ -88,6 +90,13 @@ impl StdioClient {
                     break;
                 }
                 eprint!("[{}] {}", server_name_str, line);
+                {
+                    let mut lines = last_stderr_lines_clone.lock().await;
+                    lines.push_back(line.trim_end().to_string());
+                    if lines.len() > 10 {
+                        lines.pop_front();
+                    }
+                }
                 line.clear();
             }
         });
@@ -111,6 +120,7 @@ impl StdioClient {
 
         // Stdout reading task
         let pending_requests_reader = Arc::clone(&pending_requests);
+        let last_stderr_lines_stdout = Arc::clone(&last_stderr_lines);
         let server_name_str2 = server_name.to_string();
         tokio::spawn(async move {
             let mut reader = BufReader::new(stdout);
@@ -152,9 +162,18 @@ impl StdioClient {
             }
 
             // Cleanup pending on EOF
+            let last_stderr = {
+                let lines = last_stderr_lines_stdout.lock().await;
+                if lines.is_empty() {
+                    "No stderr output available.".to_string()
+                } else {
+                    lines.iter().cloned().collect::<Vec<_>>().join("\n")
+                }
+            };
+            let err_msg = format!("Server process exited unexpectedly. Last stderr:\n{}", last_stderr);
             let mut reqs = pending_requests_reader.lock().await;
             for (_, tx) in reqs.drain() {
-                let _ = tx.send(Err("Server process exited unexpectedly".to_string()));
+                let _ = tx.send(Err(err_msg.clone()));
             }
             debug(&format!("Stdio connection to {} closed", server_name_str2));
         });
